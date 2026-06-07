@@ -1,3 +1,191 @@
+# import streamlit as st
+
+# from src.ui.base_layout import style_background_dashboard, style_base_layout
+
+# from src.components.header import header_dashboard
+# from src.components.footer import footer_dashboard
+# from PIL import Image
+# import numpy as np
+# from src.pipelines.face_pipeline import predict_attendance, get_face_embeddings, train_classifier
+# from src.pipelines.voice_pipeline import get_voice_embedding
+# from src.database.db import get_all_students, create_student, get_student_subjects, get_student_attendance, unenroll_student_to_subject
+# import time
+
+# from src.components.dialog_enroll import enroll_dialog
+# from src.components.subject_card import subject_card
+
+# def student_dashboard():
+#     student_data = st.session_state.student_data
+#     student_id = student_data['student_id']
+#     c1, c2 = st.columns(2, vertical_alignment='center', gap='xxlarge')
+#     with c1:
+#         header_dashboard()
+#     with c2:
+#         st.subheader(f"""Welcome, {student_data['name']} """)
+#         if st.button("Logout", type='secondary', key='loginbackbtn', shortcut="control+backspace"):
+#             st.session_state['is_logged_in'] = False
+#             del st.session_state.student_data 
+#             st.rerun()
+
+
+#     st.space()
+
+#     c1, c2 =st.columns(2)
+#     with c1:
+#         st.header('Your Enrolled Subjects')
+#     with c2:
+#         if st.button('Enroll in Subject', type='primary', width='stretch'):
+#             enroll_dialog()
+
+
+#     st.divider()
+
+
+#     with st.spinner('Loading your enrolled subjects..'):
+#         subjects = get_student_subjects(student_id)
+#         logs = get_student_attendance(student_id)
+
+#     stats_map = {}
+
+#     for log in logs:
+#         sid = log['subject_id']
+
+#         if sid not in stats_map:
+#             stats_map[sid] = {"total":0, "attended": 0}
+
+#         stats_map[sid]['total'] +=1
+
+#         if log.get('is_present'):
+#             stats_map[sid]['attended'] += 1
+
+
+#     cols = st.columns(2)
+#     for i, sub_node in enumerate(subjects):
+#         sub = sub_node['subjects']
+#         sid = sub['subject_id']
+
+
+#         stats = stats_map.get(sid,{"total":0, "attended": 0} )
+#         def unenroll_button():
+#                 if st.button("Unenroll from tihs course", type='tertiary', width='stretch', icon=':material/delete_forever:'):
+#                     unenroll_student_to_subject(student_id, sid)
+#                     st.toast(f'Unenrolled from {sub['name']} successfully!')
+#                     st.rerun()
+
+#         with cols[i % 2]:
+
+#             subject_card(
+#                 name = sub['name'],
+#                 code =sub['subject_code'],
+#                 section = sub['section'],
+#                 stats = [
+#                     ('📅', 'Total', stats['total']),
+#                     ('✅', 'Attended', stats['attended']),
+#                 ],
+#                 footer_callback=unenroll_button
+#             )
+#     footer_dashboard()
+
+
+# def student_screen():
+
+
+#     style_background_dashboard()
+#     style_base_layout()
+
+
+#     if "student_data" in st.session_state:
+#         student_dashboard()
+#         return
+    
+#     c1, c2 = st.columns(2, vertical_alignment='center', gap='xxlarge')
+#     with c1:
+#         header_dashboard()
+#     with c2:
+#         if st.button("Go back to Home", type='secondary', key='loginbackbtn', shortcut="control+backspace"):
+#             st.session_state['login_type'] = None
+#             st.rerun()
+
+#     st.header('Login using FaceID', text_alignment='center')
+#     st.space()
+#     st.space()
+    
+#     show_registration = False
+#     photo_source = st.camera_input("Position your face in the center")
+
+#     if photo_source:
+#         img = np.array(Image.open(photo_source))
+
+#         with st.spinner('AI is scanning..'):
+#             detected, all_ids, num_faces = predict_attendance(img)
+
+#             if num_faces == 0:
+#                 st.warning('Face not found!')
+#             elif num_faces >1:
+#                 st.warning('Multiple faces found')
+#             else:
+#                 if detected:
+#                     student_id = list(detected.keys())[0]
+#                     all_students = get_all_students()
+#                     student = next((s for s in all_students if s['student_id']==student_id), None)
+
+#                     if student:
+#                         st.session_state.is_logged_in = True
+#                         st.session_state.user_role = 'student'
+#                         st.session_state.student_data = student
+#                         st.toast(f'Welcome Back {student['name']}')
+#                         time.sleep(1)
+#                         st.rerun()
+#                 else:
+#                     st.info('Face not recognized! You might be a new student!')
+#                     show_registration = True
+#     if show_registration:
+#         with st.container(border=True):
+#             st.header('Register new Profile')
+#             new_name = st.text_input("Enter your name", placeholder='E.g. Hamza Rizvi')
+
+#             st.subheader('Optional : Voice Enrollment')
+#             st.info("Enroll your for voice only attendance")
+
+
+#             audio_data = None
+
+#             try:
+#                 audio_data = st.audio_input('Record a short phrase like I am present, My name is Akash.')
+#             except Exception:
+#                 st.error('Audio Data failed!')
+
+#             if st.button('Create Account', type='primary'):
+#                 if new_name:
+#                     with st.spinner('Creating profile..'):
+#                         img = np.array(Image.open(photo_source))
+#                         encodings= get_face_embeddings(img)
+#                         if encodings:
+#                             face_emb = encodings[0].tolist()
+
+#                             voice_emb = None
+#                             if audio_data:
+#                                 voice_emb = get_voice_embedding(audio_data.read())
+
+#                             response_data = create_student(new_name, face_embedding=face_emb, voice_embedding=voice_emb)
+
+#                             if response_data:
+#                                 train_classifier()
+#                                 st.session_state.is_logged_in = True
+#                                 st.session_state.user_role = 'student'
+#                                 st.session_state.student_data = response_data[0]
+#                                 st.toast(f'Profile Created! Hi {new_name}!')
+#                                 time.sleep(1)
+#                                 st.rerun()
+#                         else:
+#                             st.error('Couldnt capture your facial features for registration')
+
+#                 else:
+#                     st.warning('Please enter your name!')
+
+
+        
+#     footer_dashboard()
 import streamlit as st
 
 from src.ui.base_layout import style_background_dashboard, style_base_layout
@@ -14,175 +202,309 @@ import time
 from src.components.dialog_enroll import enroll_dialog
 from src.components.subject_card import subject_card
 
+STUDENT_STYLES = """
+<style>
+@keyframes scanLine {
+    0%   { top: 0%; opacity: 0.8; }
+    50%  { opacity: 0.4; }
+    100% { top: 100%; opacity: 0; }
+}
+@keyframes ringPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(88,101,242,0.3); }
+    50%       { box-shadow: 0 0 0 12px rgba(88,101,242,0); }
+}
+@keyframes welcomeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+.welcome-banner {
+    background: linear-gradient(135deg, #5865F2 0%, #7c3aed 50%, #EB459E 100%);
+    border-radius: 20px;
+    padding: 20px 24px;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 1rem;
+    box-shadow: 0 8px 30px rgba(88,101,242,0.25);
+    animation: welcomeIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+
+.welcome-avatar {
+    width: 48px; height: 48px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.welcome-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin: 0;
+}
+.welcome-sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.8rem;
+    opacity: 0.75;
+    margin: 2px 0 0;
+}
+
+.scan-hint {
+    background: linear-gradient(135deg, rgba(88,101,242,0.06), rgba(235,69,158,0.04));
+    border: 1px solid rgba(88,101,242,0.12);
+    border-radius: 16px;
+    padding: 16px 20px;
+    text-align: center;
+    margin: 1rem 0;
+}
+.scan-hint-icon { font-size: 2rem; margin-bottom: 6px; }
+.scan-hint-text {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    color: #5865F2;
+    font-weight: 500;
+}
+
+.register-box {
+    background: white;
+    border-radius: 24px;
+    padding: 28px;
+    border: 1px solid rgba(88,101,242,0.12);
+    box-shadow: 0 8px 32px rgba(88,101,242,0.08);
+    margin-top: 1rem;
+}
+.register-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #1a1a2e;
+    margin: 0 0 4px 0;
+}
+.register-sub {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    color: #6b7280;
+    margin: 0 0 20px 0;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 1.5rem 0 0.5rem;
+}
+.section-pill {
+    background: linear-gradient(135deg, #5865F2, #EB459E);
+    color: white;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.05em;
+}
+</style>
+"""
+
+
 def student_dashboard():
+    st.markdown(STUDENT_STYLES, unsafe_allow_html=True)
+
     student_data = st.session_state.student_data
     student_id = student_data['student_id']
+
     c1, c2 = st.columns(2, vertical_alignment='center', gap='xxlarge')
     with c1:
         header_dashboard()
     with c2:
-        st.subheader(f"""Welcome, {student_data['name']} """)
+        st.markdown(f"""
+            <div class="welcome-banner">
+                <div class="welcome-avatar">👋</div>
+                <div>
+                    <div class="welcome-name">{student_data['name']}</div>
+                    <div class="welcome-sub">Student Dashboard</div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
         if st.button("Logout", type='secondary', key='loginbackbtn', shortcut="control+backspace"):
             st.session_state['is_logged_in'] = False
-            del st.session_state.student_data 
+            del st.session_state.student_data
             st.rerun()
-
 
     st.space()
 
-    c1, c2 =st.columns(2)
+    c1, c2 = st.columns(2)
     with c1:
-        st.header('Your Enrolled Subjects')
+        st.markdown('<div class="section-header"><h3 style="margin:0">Your Subjects</h3><span class="section-pill">enrolled</span></div>', unsafe_allow_html=True)
     with c2:
-        if st.button('Enroll in Subject', type='primary', width='stretch'):
+        if st.button('+ Enroll in Subject', type='primary', width='stretch'):
             enroll_dialog()
 
-
     st.divider()
-
 
     with st.spinner('Loading your enrolled subjects..'):
         subjects = get_student_subjects(student_id)
         logs = get_student_attendance(student_id)
 
     stats_map = {}
-
     for log in logs:
         sid = log['subject_id']
-
         if sid not in stats_map:
-            stats_map[sid] = {"total":0, "attended": 0}
-
-        stats_map[sid]['total'] +=1
-
+            stats_map[sid] = {"total": 0, "attended": 0}
+        stats_map[sid]['total'] += 1
         if log.get('is_present'):
             stats_map[sid]['attended'] += 1
 
+    if not subjects:
+        st.markdown("""
+            <div style="text-align:center; padding: 3rem; background: white; border-radius: 20px; border: 1px solid rgba(88,101,242,0.1)">
+                <div style="font-size:3rem; margin-bottom:12px">📚</div>
+                <div style="font-family:'Syne',sans-serif; font-weight:700; color:#1a1a2e; font-size:1.1rem">No subjects yet</div>
+                <div style="font-family:'DM Sans',sans-serif; color:#6b7280; font-size:0.88rem; margin-top:4px">Enroll in a subject using the button above</div>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        cols = st.columns(2)
+        for i, sub_node in enumerate(subjects):
+            sub = sub_node['subjects']
+            sid = sub['subject_id']
+            stats = stats_map.get(sid, {"total": 0, "attended": 0})
 
-    cols = st.columns(2)
-    for i, sub_node in enumerate(subjects):
-        sub = sub_node['subjects']
-        sid = sub['subject_id']
-
-
-        stats = stats_map.get(sid,{"total":0, "attended": 0} )
-        def unenroll_button():
-                if st.button("Unenroll from tihs course", type='tertiary', width='stretch', icon=':material/delete_forever:'):
+            with cols[i % 2]:
+                subject_card(
+                    name=sub['name'],
+                    code=sub['subject_code'],
+                    section=sub['section'],
+                    stats=[
+                        ('📅', 'Total', stats['total']),
+                        ('✅', 'Attended', stats['attended']),
+                    ],
+                )
+                if st.button("Unenroll", type='tertiary', width='stretch', icon=':material/delete_forever:', key=f"unenroll_{sid}"):
                     unenroll_student_to_subject(student_id, sid)
-                    st.toast(f'Unenrolled from {sub['name']} successfully!')
+                    st.toast(f"Unenrolled from {sub['name']}")
                     st.rerun()
 
-        with cols[i % 2]:
-
-            subject_card(
-                name = sub['name'],
-                code =sub['subject_code'],
-                section = sub['section'],
-                stats = [
-                    ('📅', 'Total', stats['total']),
-                    ('✅', 'Attended', stats['attended']),
-                ],
-                footer_callback=unenroll_button
-            )
     footer_dashboard()
 
 
 def student_screen():
-
-
     style_background_dashboard()
     style_base_layout()
-
+    st.markdown(STUDENT_STYLES, unsafe_allow_html=True)
 
     if "student_data" in st.session_state:
         student_dashboard()
         return
-    
+
     c1, c2 = st.columns(2, vertical_alignment='center', gap='xxlarge')
     with c1:
         header_dashboard()
     with c2:
-        if st.button("Go back to Home", type='secondary', key='loginbackbtn', shortcut="control+backspace"):
+        if st.button("← Back to Home", type='secondary', key='loginbackbtn', shortcut="control+backspace"):
             st.session_state['login_type'] = None
             st.rerun()
 
-    st.header('Login using FaceID', text_alignment='center')
-    st.space()
-    st.space()
-    
+    st.markdown("""
+        <div style="text-align:center; margin: 1.5rem 0 0.5rem">
+            <div style="font-family:'Syne',sans-serif; font-weight:800; font-size:1.6rem; color:#1a1a2e; margin-bottom:4px">
+                Face ID Login
+            </div>
+            <div style="font-family:'DM Sans',sans-serif; font-size:0.9rem; color:#6b7280">
+                Position your face in the center of the camera
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+        <div class="scan-hint">
+            <div class="scan-hint-icon">🎯</div>
+            <div class="scan-hint-text">Look directly at the camera for best results</div>
+        </div>
+    """, unsafe_allow_html=True)
+
     show_registration = False
-    photo_source = st.camera_input("Position your face in the center")
+    photo_source = st.camera_input("Take a photo to login", label_visibility='collapsed')
 
     if photo_source:
         img = np.array(Image.open(photo_source))
-
-        with st.spinner('AI is scanning..'):
+        with st.spinner('🤖 AI is scanning your face…'):
             detected, all_ids, num_faces = predict_attendance(img)
 
             if num_faces == 0:
-                st.warning('Face not found!')
-            elif num_faces >1:
-                st.warning('Multiple faces found')
+                st.warning('😕 No face detected — please try again in better lighting')
+            elif num_faces > 1:
+                st.warning('👥 Multiple faces found — please ensure only you are in frame')
             else:
                 if detected:
                     student_id = list(detected.keys())[0]
                     all_students = get_all_students()
-                    student = next((s for s in all_students if s['student_id']==student_id), None)
-
+                    student = next((s for s in all_students if s['student_id'] == student_id), None)
                     if student:
                         st.session_state.is_logged_in = True
                         st.session_state.user_role = 'student'
                         st.session_state.student_data = student
-                        st.toast(f'Welcome Back {student['name']}')
+                        st.toast(f"Welcome back, {student['name']}! 🎉")
                         time.sleep(1)
                         st.rerun()
                 else:
-                    st.info('Face not recognized! You might be a new student!')
+                    st.info('👋 Face not recognized — you might be new here!')
                     show_registration = True
+
     if show_registration:
+        st.markdown("""
+            <div style="margin-top:1.5rem">
+                <div class="register-title">✨ Create your profile</div>
+                <div class="register-sub">Set up your AI RollCall account with face + optional voice</div>
+            </div>
+        """, unsafe_allow_html=True)
+
         with st.container(border=True):
-            st.header('Register new Profile')
-            new_name = st.text_input("Enter your name", placeholder='E.g. Hamza Rizvi')
+            new_name = st.text_input("Your full name", placeholder='E.g. Priya Sharma')
 
-            st.subheader('Optional : Voice Enrollment')
-            st.info("Enroll your for voice only attendance")
-
+            st.markdown("""
+                <div style="margin:1rem 0 0.5rem">
+                    <span style="font-family:'Syne',sans-serif; font-weight:600; font-size:0.9rem; color:#5865F2">🎙️ Voice Enrollment</span>
+                    <span style="font-family:'DM Sans',sans-serif; font-size:0.78rem; color:#9ca3c4; margin-left:8px">optional</span>
+                </div>
+                <div style="font-family:'DM Sans',sans-serif; font-size:0.83rem; color:#6b7280; margin-bottom:8px">
+                    Record yourself saying "I am present" or your name for voice attendance
+                </div>
+            """, unsafe_allow_html=True)
 
             audio_data = None
-
             try:
-                audio_data = st.audio_input('Record a short phrase like I am present, My name is Akash.')
+                audio_data = st.audio_input('Record a short phrase')
             except Exception:
-                st.error('Audio Data failed!')
+                st.error('Audio recording unavailable')
 
-            if st.button('Create Account', type='primary'):
+            if st.button('🚀 Create My Account', type='primary', width='stretch'):
                 if new_name:
-                    with st.spinner('Creating profile..'):
+                    with st.spinner('Creating your profile…'):
                         img = np.array(Image.open(photo_source))
-                        encodings= get_face_embeddings(img)
+                        encodings = get_face_embeddings(img)
                         if encodings:
                             face_emb = encodings[0].tolist()
-
                             voice_emb = None
                             if audio_data:
                                 voice_emb = get_voice_embedding(audio_data.read())
 
                             response_data = create_student(new_name, face_embedding=face_emb, voice_embedding=voice_emb)
-
                             if response_data:
                                 train_classifier()
                                 st.session_state.is_logged_in = True
                                 st.session_state.user_role = 'student'
                                 st.session_state.student_data = response_data[0]
-                                st.toast(f'Profile Created! Hi {new_name}!')
+                                st.toast(f"Welcome to AI RollCall, {new_name}! 🎉")
                                 time.sleep(1)
                                 st.rerun()
                         else:
-                            st.error('Couldnt capture your facial features for registration')
-
+                            st.error('Could not capture facial features — please retake the photo')
                 else:
-                    st.warning('Please enter your name!')
+                    st.warning('Please enter your name')
 
-
-        
     footer_dashboard()
