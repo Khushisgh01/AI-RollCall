@@ -1,32 +1,3 @@
-# import streamlit as st
-# from src.components.header import header_home
-# from src.components.footer import footer_home
-# from src.ui.base_layout import style_base_layout, style_background_home
-# def home_screen():
-
-
-#     header_home()
-#     style_background_home()
-#     style_base_layout()
-
-
-#     col1, col2 = st.columns(2, gap="large")
-
-#     with col1:
-#         st.header("I'm Student")
-#         st.image("https://i.ibb.co/844D9Lrt/mascot-student.png", width=120)
-#         if st.button('Student Portal', type='primary', icon=':material/arrow_outward:', icon_position='right'):
-#             st.session_state['login_type']='student'
-#             st.rerun()
-
-#     with col2:
-#         st.header("I'm Teacher")
-#         st.image("https://i.ibb.co/CsmQQV6X/mascot-prof.png", width=145)
-#         if st.button('Teacher Portal', type='primary', icon=':material/arrow_outward:', icon_position='right'):
-#             st.session_state['login_type']='teacher'
-#             st.rerun()
-
-#     footer_home()
 import streamlit as st
 from src.components.footer import footer_home
 from src.ui.base_layout import style_base_layout, style_background_home
@@ -137,7 +108,7 @@ def home_screen():
             font-family: 'DM Sans', sans-serif;
             font-size: 0.74rem;
             line-height: 1.55;
-            margin-bottom: 18px;
+            margin-bottom: 0;
         }
         .student-card .card-desc {
             color: rgba(255, 210, 225, 0.58);
@@ -147,26 +118,6 @@ def home_screen():
             color: rgba(160, 235, 255, 0.58);
             -webkit-text-fill-color: rgba(160, 235, 255, 0.58);
         }
-
-        .card-cta {
-            display: inline-block;
-            padding: 9px 22px;
-            border-radius: 50px;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 700;
-            font-size: 0.8rem;
-            letter-spacing: 0.02em;
-            color: white !important;
-            -webkit-text-fill-color: white !important;
-        }
-        .student-card .card-cta {
-            background: linear-gradient(135deg, #ff3c78, #b040e8);
-            box-shadow: 0 4px 18px rgba(255, 60, 120, 0.5);
-        }
-        .teacher-card .card-cta {
-            background: linear-gradient(135deg, #1ab8ff, #00e0a0);
-            box-shadow: 0 4px 18px rgba(26, 184, 255, 0.45);
-        }
         </style>
 
         <div class="portals-row">
@@ -175,25 +126,24 @@ def home_screen():
                 <div class="card-role-label">For Learners</div>
                 <div class="card-title">Student<br/>Portal</div>
                 <div class="card-desc">Log attendance via face recognition or voice ID</div>
-                <div class="card-cta">Enter Portal →</div>
             </div>
             <div class="portal-card teacher-card">
                 <span class="card-emoji">📋</span>
                 <div class="card-role-label">For Educators</div>
                 <div class="card-title">Teacher<br/>Portal</div>
                 <div class="card-desc">Take AI-powered classroom attendance in seconds</div>
-                <div class="card-cta">Enter Portal →</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
+    # Single set of action buttons below the cards
     col1, col2 = st.columns(2, gap="small")
     with col1:
-        if st.button('🎓 Student Portal', type='primary', key='student_btn', width='stretch'):
+        if st.button('🎓 Enter Student Portal', type='primary', key='student_btn', width='stretch'):
             st.session_state['login_type'] = 'student'
             st.rerun()
     with col2:
-        if st.button('📋 Teacher Portal', type='primary', key='teacher_btn', width='stretch'):
+        if st.button('📋 Enter Teacher Portal', type='primary', key='teacher_btn', width='stretch'):
             st.session_state['login_type'] = 'teacher'
             st.rerun()
 
